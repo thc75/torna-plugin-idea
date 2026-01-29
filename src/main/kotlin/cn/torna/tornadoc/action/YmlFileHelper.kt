@@ -11,6 +11,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTreeUtil
@@ -151,57 +153,63 @@ internal object YmlFileHelper {
             return
         }
 
-        TornaPlugin.pushDoc(config, object : PushListener {
-            override fun onBeforePush(projectContext: ProjectContext?) {
-                val pluginConfig = projectContext!!.pluginConfig
-                pluginConfig.srcDirs = mutableListOf<String?>(srcDir)
-                pluginConfig.scans = mutableListOf<String?>(scan)
-            }
+        project?.let { it ->
+            object : Task.Backgroundable(it, "Pushing doc to Torna", true) {
+                override fun run(indicator: ProgressIndicator) {
+                    indicator.text = "Pushing documentation..."
+                    TornaPlugin.pushDoc(config, object : PushListener {
+                        override fun onBeforePush(projectContext: ProjectContext?) {
+                            val pluginConfig = projectContext!!.pluginConfig
+                            pluginConfig.srcDirs = mutableListOf<String?>(srcDir)
+                            pluginConfig.scans = mutableListOf<String?>(scan)
+                        }
 
-            override fun onError(projectContext: ProjectContext?, e: Exception?) {
-                project?.let {
-                    NotificationGroupManager.getInstance()
-                        .getNotificationGroup("torna.doc.notification.group")
-                        .createNotification(
-                            "Push doc failed",
-                            e?.message ?: "Unknown error",
-                            NotificationType.ERROR
-                        )
-                        .notify(it)
+                        override fun onError(projectContext: ProjectContext?, e: Exception?) {
+                            project?.let {
+                                NotificationGroupManager.getInstance()
+                                    .getNotificationGroup("torna.doc.notification.group")
+                                    .createNotification(
+                                        "Push doc failed",
+                                        e?.message ?: "Unknown error",
+                                        NotificationType.ERROR
+                                    )
+                                    .notify(it)
+                            }
+                        }
+
+                        override fun onAfterPush(projectContext: ProjectContext?, result: String?) {
+                            val objectMapper: ObjectMapper = ObjectMapper()
+                            val readValue = objectMapper.readValue<Map<String, Any?>>(result!!)
+
+                            // 判断是否成功 (code == 0 表示成功)
+                            val code = readValue["code"] as? String
+                            val isSuccess = code == "0"
+
+                            project.let {
+                                val notification = NotificationGroupManager.getInstance()
+                                    .getNotificationGroup("torna.doc.notification.group")
+                                if (isSuccess) {
+                                    notification
+                                        .createNotification(
+                                            "Push doc success",
+                                            NotificationType.INFORMATION
+                                        )
+                                        .notify(it)
+                                } else {
+                                    val message = readValue["msg"] as? String ?: "Push doc failed"
+                                    notification
+                                        .createNotification(
+                                            "Push doc failed",
+                                            message,
+                                            NotificationType.ERROR
+                                        )
+                                        .notify(it)
+                                }
+                            }
+                        }
+                    })
                 }
-            }
-
-            override fun onAfterPush(projectContext: ProjectContext?, result: String?) {
-                val objectMapper: ObjectMapper = ObjectMapper()
-                val readValue = objectMapper.readValue<Map<String, Any?>>(result!!)
-
-                // 判断是否成功 (code == 0 表示成功)
-                val code = readValue["code"] as? String
-                val isSuccess = code == "0"
-
-                project?.let {
-                    val notification = NotificationGroupManager.getInstance()
-                        .getNotificationGroup("torna.doc.notification.group")
-                    if (isSuccess) {
-                        notification
-                            .createNotification(
-                                "Push doc success",
-                                NotificationType.INFORMATION
-                            )
-                            .notify(it)
-                    } else {
-                        val message = readValue["msg"] as? String ?: "Push doc failed"
-                        notification
-                            .createNotification(
-                                "Push doc failed",
-                                message,
-                                NotificationType.ERROR
-                            )
-                            .notify(it)
-                    }
-                }
-            }
-        })
-
+            }.queue()
+        }
     }
 }

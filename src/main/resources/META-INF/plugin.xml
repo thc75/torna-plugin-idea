@@ -19,6 +19,14 @@
         <br />
         Usage:
         <br />
+        Create a yml file named "torna.yml" in the "src/main/resources", and add the following content:
+        <pre>
+# Torna push api endpoint
+url: http://&lt;torna-host&gt;/api
+
+# Torna app token
+token: "&lt;token&gt;"
+        </pre>
         <ul>
         <li>Way 1:Right click a Java file and select <b>Push Doc</b> (Push all apis in class)</li>
         <li>Way 2:Right click a package and select <b>Push Doc</b> (Push all apis in package)</li>
@@ -29,6 +37,14 @@
         <br />
         使用方式：
         <br />
+        在 "src/main/resources" 目录下创建一个 yml 文件，命名为 "torna.yml"，并添加如下内容：
+        <pre>
+# Torna push api endpoint
+url: http://&lt;torna-host&gt;/api
+
+# Torna app token
+token: "&lt;token&gt;"
+        </pre>
         <ul>
         <li>方式1：右键选择Java文件点击 <b>Push Doc</b>（推送类中所有接口）</li>
         <li>方式2：右键选择包名 <b>Push Doc</b>（推送包下所有接口）</li>
