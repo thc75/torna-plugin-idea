@@ -1,1 +1,1 @@
-rootProject.name = "torna-doc"
+rootProject.name = "torna"

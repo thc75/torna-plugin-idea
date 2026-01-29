@@ -1,19 +1,20 @@
 package cn.torna.tornadoc.action
 
 import cn.torna.plugin.core.ProjectContext
+import cn.torna.plugin.core.PushListener
 import cn.torna.plugin.core.TornaPlugin
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.editor.Editor
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiJavaFile
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.*
 import com.intellij.psi.util.PsiTreeUtil
-import java.util.function.Consumer
+import java.lang.Exception
 
 /**
  * Yml 文件操作的工具类
@@ -24,21 +25,35 @@ internal object YmlFileHelper {
     val excludeDirs = setOf("node_modules", "target", "build", "out")
 
     /**
-     * 收集项目中的所有 torna yml 文件
+     * 收集项目中的所有 torna 开头的 yml 文件（支持多模块项目）
      */
     fun collectYmlFiles(dir: VirtualFile, result: MutableList<VirtualFile>) {
         val path = dir.path
-        dir.children.forEach { child ->
-            when {
-                child.isDirectory -> {
-                    // 递归查找子目录，排除常见的构建目录
-                    if (!child.name.startsWith(".") && child.name !in excludeDirs) {
-                        collectYmlFiles(child, result)
+
+        // 只在 src/main/resources 目录下查找
+        if (path.contains("/src/main/resources")) {
+            dir.children.forEach { child ->
+                when {
+                    child.isDirectory -> {
+                        // 排除以 . 开头的目录和构建目录
+                        if (!child.name.startsWith(".") && child.name !in excludeDirs) {
+                            collectYmlFiles(child, result)
+                        }
+                    }
+                    child.extension in setOf("yml", "yaml") && child.name.startsWith("torna") -> {
+                        result.add(child)
                     }
                 }
+            }
+            return
+        }
 
-                child.extension in setOf("yml", "yaml") && child.name.startsWith("torna") -> {
-                    result.add(child)
+        // 不在 src/main/resources 目录下，递归查找子模块中的 src 目录
+        dir.children.forEach { child ->
+            if (child.isDirectory) {
+                // 排除以 . 开头的目录和常见的构建/依赖目录
+                if (!child.name.startsWith(".") && child.name !in excludeDirs) {
+                    collectYmlFiles(child, result)
                 }
             }
         }
@@ -97,7 +112,7 @@ internal object YmlFileHelper {
 
         println("scan: $scan")
 
-        pushDoc(ymlPath, basePath, scan)
+        pushDoc(e.project, ymlPath, basePath, scan)
     }
 
     private fun getScanStr(psiFile: PsiFile, editor: Editor): String? {
@@ -131,24 +146,62 @@ internal object YmlFileHelper {
         return null
     }
 
-//    private fun pushDoc(psiFile: PsiFile) {
-//        println("PsiFile: $psiFile")
-////        val psiClass = PsiTreeUtil.getParentOfType(element, PsiClass::class.java)
-////        if (psiClass != null) {
-////            val qualifiedName = psiClass.qualifiedName
-////            println("Class: $qualifiedName")
-////            pushDoc(ymlPath, basePath, "class:$qualifiedName")
-////        }
-//    }
-
-    private fun pushDoc(config: String, srcDir: String, scan: String?) {
+    private fun pushDoc(project: Project?, config: String, srcDir: String, scan: String?) {
         if (scan == null || scan.isEmpty()) {
             return
         }
-        TornaPlugin.pushDoc(config, Consumer { ctx: ProjectContext? ->
-            val pluginConfig = ctx!!.pluginConfig
-            pluginConfig.srcDirs = mutableListOf<String?>(srcDir)
-            pluginConfig.scans = mutableListOf<String?>(scan)
+
+        TornaPlugin.pushDoc(config, object : PushListener {
+            override fun onBeforePush(projectContext: ProjectContext?) {
+                val pluginConfig = projectContext!!.pluginConfig
+                pluginConfig.srcDirs = mutableListOf<String?>(srcDir)
+                pluginConfig.scans = mutableListOf<String?>(scan)
+            }
+
+            override fun onError(projectContext: ProjectContext?, e: Exception?) {
+                project?.let {
+                    NotificationGroupManager.getInstance()
+                        .getNotificationGroup("torna.doc.notification.group")
+                        .createNotification(
+                            "Push doc failed",
+                            e?.message ?: "Unknown error",
+                            NotificationType.ERROR
+                        )
+                        .notify(it)
+                }
+            }
+
+            override fun onAfterPush(projectContext: ProjectContext?, result: String?) {
+                val objectMapper: ObjectMapper = ObjectMapper()
+                val readValue = objectMapper.readValue<Map<String, Any?>>(result!!)
+
+                // 判断是否成功 (code == 0 表示成功)
+                val code = readValue["code"] as? String
+                val isSuccess = code == "0"
+
+                project?.let {
+                    val notification = NotificationGroupManager.getInstance()
+                        .getNotificationGroup("torna.doc.notification.group")
+                    if (isSuccess) {
+                        notification
+                            .createNotification(
+                                "Push doc success",
+                                NotificationType.INFORMATION
+                            )
+                            .notify(it)
+                    } else {
+                        val message = readValue["msg"] as? String ?: "Push doc failed"
+                        notification
+                            .createNotification(
+                                "Push doc failed",
+                                message,
+                                NotificationType.ERROR
+                            )
+                            .notify(it)
+                    }
+                }
+            }
         })
+
     }
 }

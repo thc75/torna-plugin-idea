@@ -1,9 +1,8 @@
-# IntelliJ Platform Plugin Template
+# Torna Plugin
 
-[![Twitter Follow](https://img.shields.io/badge/follow-%40JBPlatform-1DA1F2?logo=twitter)](https://twitter.com/JBPlatform)
-[![Developers Forum](https://img.shields.io/badge/JetBrains%20Platform-Join-blue)][jb:forum]
+Torna Plugin for IntelliJ IDEA
 
-## Plugin template structure
+## Plugin structure
 
 A generated project contains the following content structure:
 
@@ -31,6 +30,11 @@ and the manifest for our plugin – [plugin.xml][file:plugin.xml].
 
 > [!NOTE]
 > To use Java in your plugin, create the `/src/main/java` directory.
+
+## Build
+
+Run `Tasks > intellij platform > buildPlugin`, then find zip file under `build/distributions`
+
 
 ## Plugin configuration file
 

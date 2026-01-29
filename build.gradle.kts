@@ -24,7 +24,7 @@ dependencies {
         bundledPlugin("com.intellij.java")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
-    implementation("cn.torna:torna-plugin:0.1.8")
+    implementation("cn.torna:torna-plugin:0.1.10")
 }
 
 intellijPlatform {

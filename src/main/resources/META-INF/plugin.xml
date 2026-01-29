@@ -1,11 +1,11 @@
 <!-- Plugin Configuration File: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <!-- Unique identifier of the plugin. It should be FQN, cannot be changed between the plugin versions. -->
-    <id>cn.torna.torna-doc</id>
+    <id>cn.torna.torna</id>
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
-    <name>Torna-Doc</name>
+    <name>Torna</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor url="https://torna.cn">Torna</vendor>
@@ -14,6 +14,27 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
     <description><![CDATA[
         Torna Plugin, help you to push doc info to Torna. For more about Torna, please visit <a href="https://torna.cn">https://torna.cn</a>
+
+        <br />
+        <br />
+        Usage:
+        <br />
+        <ul>
+        <li>Way 1:Right click a Java file and select <b>Push Doc</b> (Push all apis in class)</li>
+        <li>Way 2:Right click a package and select <b>Push Doc</b> (Push all apis in package)</li>
+        <li>Way 3:Open a Java file and right click at class name and select <b>Push Doc</b> (Push all apis in class)</li>
+        <li>Way 4:Open a Java file and right click at method name and select <b>Push Doc</b> (Push current api)</li>
+        </ul>
+        <br />
+        <br />
+        使用方式：
+        <br />
+        <ul>
+        <li>方式1：右键选择Java文件点击 <b>Push Doc</b>（推送类中所有接口）</li>
+        <li>方式2：右键选择包名 <b>Push Doc</b>（推送包下所有接口）</li>
+        <li>方式3：打开Java文件，类名处右键 <b>Push Doc</b>（推送类中所有接口）</li>
+        <li>方式4：打开Java文件，接口方法名处右键 <b>Push Doc</b>（推送当前接口）</li>
+        </ul>
     ]]></description>
 
     <!-- Product and plugin compatibility requirements.
@@ -27,6 +48,7 @@
     <extensions defaultExtensionNs="com.intellij">
 <!--        <toolWindow id="MyToolWindow" factoryClass="cn.torna.tornadoc.MyToolWindowFactory"-->
 <!--                    icon="AllIcons.Toolwindows.ToolWindowPalette"/>-->
+        <notificationGroup id="torna.doc.notification.group" displayType="BALLOON"/>
     </extensions>
 
     <actions>
