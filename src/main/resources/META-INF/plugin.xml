@@ -33,6 +33,13 @@
         <group id="cn.torna.tornadoc.action.ListYmlFilesAction" class="cn.torna.tornadoc.action.ListYmlFilesAction"
                 text="Push Doc" description="Select a file to push" popup="true">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </group>
+
+        <action id="cn.torna.tornadoc.action.OneYmlFileAction" class="cn.torna.tornadoc.action.OneYmlFileAction"
+               text="Push Doc" description="Push doc">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
+        </action>
     </actions>
 </idea-plugin>

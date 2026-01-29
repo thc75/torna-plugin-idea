@@ -4,17 +4,19 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiJavaFile
 
 /**
- * 查询当前项目中的 torna yml 文件并作为子菜单显示
+ * 当只有一个 yml 文件时，直接执行操作
  *
  * @author Torna
  */
-internal class ListYmlFilesAction : DefaultActionGroup() {
+internal class OneYmlFileAction : AnAction("Push Doc") {
+    private var ymlFile: VirtualFile? = null
+
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
@@ -25,32 +27,30 @@ internal class ListYmlFilesAction : DefaultActionGroup() {
         val project = e.getData(CommonDataKeys.PROJECT)
         val baseDir = project?.baseDir
 
-        if (baseDir != null) {
+        if (baseDir != null && isSelectedJavaOrPackage) {
             // 查找所有 yml 文件
             val ymlFiles = mutableListOf<VirtualFile>()
             YmlFileHelper.collectYmlFiles(baseDir, ymlFiles)
 
-            // 只在多个文件时才显示此 action
-            e.presentation.isVisible = isSelectedJavaOrPackage && ymlFiles.size > 1
-            e.presentation.isEnabled = ymlFiles.size > 1
+            // 只有一个文件时才显示此 action
+            if (ymlFiles.size == 1) {
+                ymlFile = ymlFiles[0]
+                e.presentation.isEnabledAndVisible = true
+            } else {
+                ymlFile = null
+                e.presentation.isEnabledAndVisible = false
+            }
         } else {
+            ymlFile = null
             e.presentation.isEnabledAndVisible = false
         }
     }
 
-    override fun getChildren(e: AnActionEvent?): Array<AnAction> {
-        val project = e?.getData(CommonDataKeys.PROJECT) ?: return emptyArray()
-        val baseDir = project.baseDir ?: return emptyArray()
-
-        // 查找所有 yml 文件
-        val ymlFiles = mutableListOf<VirtualFile>()
-        YmlFileHelper.collectYmlFiles(baseDir, ymlFiles)
-
-        // 返回子菜单项
-        return ymlFiles.map { file ->
-            YmlFileAction(file)
-        }.toTypedArray()
+    override fun actionPerformed(e: AnActionEvent) {
+        val file = ymlFile ?: return
+        YmlFileHelper.executePushDoc(e, file)
     }
+
 
     private fun hasJavaFileRecursively(directory: PsiDirectory): Boolean {
         // 检查当前目录的文件
@@ -59,16 +59,5 @@ internal class ListYmlFilesAction : DefaultActionGroup() {
         }
         // 递归检查子目录
         return directory.subdirectories.any { hasJavaFileRecursively(it) }
-    }
-
-    /**
-     * 单个 yml 文件的子菜单 Action
-     */
-    private class YmlFileAction(private val file: VirtualFile) : AnAction(file.name) {
-        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
-
-        override fun actionPerformed(e: AnActionEvent) {
-            YmlFileHelper.executePushDoc(e, file)
-        }
     }
 }
