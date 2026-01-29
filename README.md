@@ -33,7 +33,7 @@ and the manifest for our plugin – [plugin.xml][file:plugin.xml].
 
 ## Build
 
-Run `Tasks > intellij platform > buildPlugin`, then find zip file under `build/distributions`
+Run `Tasks > build > build`, then find zip file under `build/distributions`
 
 
 ## Plugin configuration file
