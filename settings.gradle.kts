@@ -1,1 +1,1 @@
-rootProject.name = "torna"
+rootProject.name = "torna-plugin-idea"
