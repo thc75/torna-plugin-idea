@@ -2,6 +2,8 @@
 
 Torna Plugin for IntelliJ IDEA
 
+Support version: 2023.3+
+
 ## Plugin structure
 
 A generated project contains the following content structure:

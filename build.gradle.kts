@@ -5,7 +5,8 @@ plugins {
 }
 
 group = "cn.torna"
-version = "0.1.1"
+// <idea version>-<plugin version>
+version = "0.1.2"
 
 repositories {
 //    maven {
@@ -20,7 +21,7 @@ repositories {
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html
 dependencies {
     intellijPlatform {
-        intellijIdeaUltimate("2025.2.4")
+        intellijIdeaUltimate("2023.3")
         bundledPlugin("com.intellij.java")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
@@ -30,7 +31,7 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "252.25557"
+            sinceBuild = "233"
         }
 
         changeNotes = """
@@ -41,14 +42,15 @@ intellijPlatform {
 
 tasks {
     // Set the JVM compatibility versions
+    // Java 11 for IntelliJ IDEA 2021.1 compatibility
     withType<JavaCompile> {
-        sourceCompatibility = "21"
-        targetCompatibility = "21"
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
     }
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
